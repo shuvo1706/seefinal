@@ -1,0 +1,218 @@
+{% extends "employees/home.html" %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Award Report</title>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Arial', sans-serif;
+        }
+        .container {
+            max-width: 90%;
+            margin-top: 20px;
+        }
+        .user_card {
+            background: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .form-title {
+            font-weight: bold;
+            color: #343a40;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .table-container {
+            max-height: 700px;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 8px 10px;
+            border: 1px solid #dee2e6;
+            text-align: center;
+            font-size: 14px;
+        }
+        th {
+            background-color: #343a40;
+            color: #ffffff;
+        }
+        td {
+            background-color: #ffffff;
+        }
+        .status-btn {
+            border: none;
+            background: none;
+            color: blue;
+            cursor: pointer;
+        }
+        .btn-options {
+            display: none;
+            margin-top: 10px;
+        }
+        .btn-options button {
+            margin: 5px;
+        }
+        .login_btn {
+            width: 50%;
+            background: #007bff !important;
+            color: #ffffff !important;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        .login_btn:hover {
+            background: #0056b3 !important;
+        }
+        @media (max-width: 768px) {
+            .table-container {
+                width: 100%;
+            }
+            th, td {
+                font-size: 12px;
+                padding: 6px 8px;
+            }
+        }
+        .description-column {
+            width: 40%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="user_card">
+            <h3 class="form-title">Award Report</h3>
+            <div class="table-container">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Advisor</th>
+                            <th>Evaluator Name</th>
+                            <th>Evaluatee Name</th>
+                            <th>Purpose</th>
+                            <th class="description-column">Description</th>
+                            <th>Status</th>
+                            <th>Remark</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in report_data %}
+                        <tr id="row-{{ report.award_id }}">
+                            <form id="form-{{ report.award_id }}" action="{% url 'update_remark_status' %}" method="post" novalidate>
+                                {% csrf_token %}
+                                <td>{{ report.advisorid }}</td>
+                                <td>{{ report.evaluator_name }}</td>
+                                <td>{{ report.evaluatee_name }}</td>
+                                <td>{{ report.purpose }}</td>
+                                <td class="description-column">{{ report.description }}</td>
+                                <td>
+                                    {% if report.status == "PENDING" %}
+                                        <button class="status-btn" type="button" onclick="showOptions({{ report.award_id }})">{{ report.status }}</button>
+                                        <div id="options-{{ report.award_id }}" class="btn-options">
+                                            <button class="btn btn-danger" type="button" onclick="updateStatus({{ report.award_id }}, 1, {{ report.Counter }}, {{ report.evaluator_id }})">Reject</button>
+                                            <button class="btn btn-success" type="button" onclick="updateStatus({{ report.award_id }}, 2, {{ report.Counter }}, {{ report.evaluator_id }})">Approve</button>
+                                        </div>
+                                    {% else %}
+                                        {{ report.status }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <input type="text" name="remark" placeholder="Enter remark" class="form-control">
+                                    <input type="hidden" name="award_id" value="{{ report.award_id }}">
+                                    <input type="hidden" name="new_status" value="{{ report.status }}">
+                                    <input type="hidden" name="new_counter" value="{{ report.Counter }}">
+                                    <input type="hidden" name="employee_id" value="{{ report.evaluator_id }}">
+                                </td>
+                                <td>
+                                    <button class="btn btn-primary" type="button" onclick="submitForm({{ report.award_id }})">Submit</button>
+                                </td>
+                            </form>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="d-flex justify-content-center">
+                    <input class="login_btn" type="submit" name="profile" value="Home">
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+
+        function showOptions(award_id) {
+            document.getElementById('options-' + award_id).style.display = 'block';
+        }
+
+        function updateStatus(award_id, new_status, new_counter, employee_id) {
+            $.ajax({
+                type: 'POST',
+                url: '{% url "update_award_status" %}',
+                data: {
+                    'award_id': award_id,
+                    'new_status': new_status,
+                    'new_counter': new_counter,
+                    'employee_id': employee_id,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.status == 'success') {
+                        location.reload();
+                    } else {
+                        alert('Failed to update status.');
+                    }
+                }
+            });
+        }
+       
+
+
+        function submitForm(award_id) {
+            console.log('Submitting form for:', award_id); // Debugging
+            const form = document.getElementById(`form-${award_id}`);
+            if (form) {
+                const formData = new FormData(form);
+                $.ajax({
+                    type: 'POST',
+                    url: form.action,
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        console.log('Response:', response); // Debugging
+                        if (response.status == 'success') {
+                            document.getElementById(`row-${award_id}`).remove();
+                        } else {
+                            alert('Failed to update status.');
+                        }
+                    },
+                    error: function(error) {
+                        console.error('Error:', error); // Debugging
+                        alert('An error occurred.');
+                    }
+                });
+            } else {
+                console.error(`Form not found for award_id: ${award_id}`);
+            }
+        }
+    </script>
+</body>
+</html>
+{% endblock %}
