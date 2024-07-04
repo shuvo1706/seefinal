@@ -28,6 +28,7 @@ urlpatterns = [
     path('home/dashboard/api/advisor-status/', views.advisor_status, name='advisor_status'),
     path('home/dashboard/api/award-data/', views.award_data, name='award_data'),
     path('home/dashboard/api/search-employee/', views.search_employee, name='search_employee'),
+    path('home/award/api/search-award/', views.search_employee, name='search_award'),
     #path('home/dashboard/api/search-advisor/', views.search_advisor, name='search_advisor'),
     path('home/dashboard/api/award_pie/<int:enothi_id>/', views.award_pie, name='award_pie'),
     path('home/dashboard/api/employee-awards/<int:enothi_id>/', views.get_employee_awards, name='employee_awards'),

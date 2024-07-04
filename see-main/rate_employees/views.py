@@ -486,7 +486,7 @@ def AwardSystem(request):
          current_user.save()
              
          print("checkkk!!!!!!!")
-         award_evaluetee=Employee.objects.get(empid =request.POST['employee'])
+         award_evaluetee=Employee.objects.get(enothi_id =request.POST['employee'])    #here
          advisor_object=Employee.objects.get(enothi_id =request.POST['seek'])
          current_user= Employee.objects.get(enothi_id = request.user)
          #current_user.counter=10 

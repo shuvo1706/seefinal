@@ -1,7 +1,6 @@
 {% extends "employees/home.html" %}
 
 {% block content %}
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -31,7 +30,7 @@
         .user_card {
             width: 550px;
             margin: auto;
-            margin-top: 02px;
+            margin-top:0 px;
             background: #f8f9fa; /* Light gray background */
             padding: 20px;
             border-radius: 10px;
@@ -99,6 +98,32 @@
             color: red;
             font-weight: bold;
         }
+        /* Custom styles for the search input */
+        #searchInput {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            color: #333;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        /* Custom styles for the employee list */
+        #employeeList {
+            list-style-type: none;
+            padding: 0;
+        }
+        .list-group-item {
+            cursor: pointer;
+            padding: 10px;
+            margin-bottom: 5px;
+            background-color: #f8f9fa;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .list-group-item:hover {
+            background-color: #e9ecef;
+        }
     </style>
 </head>
 <body>
@@ -110,31 +135,28 @@
                     <form action="{% url 'award' %}" method="post" class="form-container">
                         {% csrf_token %}
                         <div class="form-group">
-                            <label for="employee">Name:</label>&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;
-                            <select name="employee" id="employee" class="form-control" required>
-                                <option value="">Select Employee</option>
-                                {% for emp in employeeData %}
-                                <option value="{{ emp.empid }}">[{{emp.enothi_id}}]-{{ emp.ename }}</option>
-                                {% endfor %}
-                            </select>
+                            <label for="Name">Select Employee:</label>
+                            <input type="text" id="searchInput" class="form-control" placeholder="enothi or name" onkeyup="searchEmployee()">
+                            <input type="hidden" id="employeeIdInput" name="employee">
+                            <ul id="employeeList" class="list-group mt-2"></ul>
                         </div>
                         <div class="form-group">
-                            <label for="purpose">Purpose:</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            <label for="purpose">Purpose:</label>
                             <input type="text" id="purpose" name="purpose" class="form-control" size="30">
                         </div>
                         <div class="form-group">
-                            <label for="description">Description:</label><br>
+                            <label for="description">Description:</label>
                             <textarea id="description" name="description" class="form-control" rows="4" cols="50"></textarea>
                         </div>
                         <div class="form-group">
-                            <label for="seek">Seek Permission from:</label><br>
+                            <label for="seek">Seek Permission from:</label>
                             <div>
-                                [{{ advisor_object.enothi_id }}] - {{ advisor_object.ename }}- ({{ade}}-{{adi}})
+                                [{{ advisor_object.enothi_id }}] - {{ advisor_object.ename }} - ({{ade}}-{{adi}})
                             </div>
                             <textarea id="seek" name="seek" style="display: none;">{{ advisor_object.enothi_id }}</textarea>
                         </div>
                         <div class="form-group">
-                            <input type="submit"  class="btn btn-dark login-btn btn-red" value="Submit">
+                            <input type="submit" class="btn btn-dark login-btn btn-red" value="Submit">
                             {% if messages %}
                             <div class="message">
                                 {% for message in messages %}
@@ -157,8 +179,32 @@
 
     <!-- Your custom script -->
     <script>
-        function myFunction() {
-            alert(document.getElementById("employee").value);
+        function searchEmployee() {
+            const query = document.getElementById('searchInput').value;
+            if (query.length < 3) {
+                document.getElementById('employeeList').innerHTML = '';
+                return;
+            }
+            fetch(`api/search-award/?q=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    const employeeList = document.getElementById('employeeList');
+                    employeeList.innerHTML = '';
+                    data.employees.forEach(emp => {
+                        const listItem = document.createElement('li');
+                        listItem.className = 'list-group-item';
+                        listItem.innerHTML = `[${emp.enothi_id}] ${emp.name}`;
+                        listItem.onclick = () => selectEmployee(emp.name, emp.enothi_id);
+                        employeeList.appendChild(listItem);
+                    });
+                })
+                .catch(error => console.error('Error searching employee:', error));
+        }
+
+        function selectEmployee(name, enothi_id) {
+            document.getElementById('searchInput').value = `[${enothi_id}] ${name}`;
+            document.getElementById('employeeIdInput').value = enothi_id;
+            document.getElementById('employeeList').innerHTML = '';
         }
     </script>
 </body>
