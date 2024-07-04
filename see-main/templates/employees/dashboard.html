@@ -63,26 +63,35 @@
                 </table>
             </div>
         </div>
-    </div>
+        <div class="container">
+            <h2 class="text-center mt-4">Employees with Most Awards</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Employee Name</th>
+                <th>Enothi ID</th>
+                <th>Total Awards</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for employee in top_employees %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ employee.employee_name }}</td>
+                    <td>{{ employee.employee_enothi_id }}</td>
+                    <td>{{ employee.total_awards }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
-    
-
-    <!-- Advisor Search and Award Status in One Row -->
-    <div class="row mt-5">
-        <div class="col-md-6">
-            <h2 class="text-center">Search Advisor</h2>
-            <input type="text" id="advisorSearchInput" class="form-control" placeholder="Search by name or enothi ID" onkeyup="searchAdvisor()">
-            <ul id="advisorList" class="list-group mt-2"></ul>
+            
         </div>
-        <div class="col-md-6">
-            <h2 class="text-center">Advisor Award Status</h2>
-            <div class="chart-container" style="position: relative; height:300px; width:100%">
-                <canvas id="advisorAwardStatusChart"></canvas>
-            </div>
-            <div id="selectedAdvisorInfo" class="text-center mt-3"></div>
-        </div>
+        
     </div>
-</div>
+   
+
 
 <script>
     let employeeChart;  // To keep track of the employee chart instance

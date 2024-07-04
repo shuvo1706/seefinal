@@ -859,8 +859,7 @@ def advisor_status(request):
     }
     return JsonResponse(data)
 
-def dashboard(request):
-    return render(request, 'employees/dashboard.html')
+    
 @login_required(login_url='login')
 def award_data(request):
     awards = Award.objects.all().values('advisorid', 'award_evaluatorid', 'award_evaluateeid', 'Status','remark')
@@ -956,5 +955,26 @@ def is_superuser(user):
 # Apply the user_passes_test decorator to your view
 @user_passes_test(is_superuser)
 def dashboard(request):
-    return render(request, 'employees/dashboard.html')   
+    top_employees = Award.objects.filter(Status=2).values('award_evaluateeid').annotate(total_awards=Count('award_evaluateeid')).order_by('-total_awards')[:5]
+
+    # Assuming you have an Employee model to fetch employee details
+    top_employees_details = []
+    for emp in top_employees:
+        employee = Employee.objects.get(enothi_id=emp['award_evaluateeid'])
+        top_employees_details.append({
+            'employee_name': employee.ename,
+            'employee_enothi_id': employee.enothi_id,
+            'total_awards': emp['total_awards']
+        })
+        
+
+    context = {
+        'top_employees': top_employees_details
+    }
+    for employee in top_employees_details:
+       
+          print(employee['total_awards'])
+
+    return render(request, 'employees/dashboard.html',context)
+    
 
