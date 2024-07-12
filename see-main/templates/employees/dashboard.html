@@ -1,11 +1,10 @@
 {% extends "employees/home.html" %}
 
-
 {% block content %}
 <style>
     .dashboard-header {
         background-color: #E6E6FA; /* Adjust color as needed */
-        padding: 15px;
+        padding: 10px; /* Relative padding */
         margin-bottom: 20px;
         border-radius: 5px;
         color: #000;
@@ -14,16 +13,41 @@
     .dashboard-header h1 {
         margin: 0;
     }
+
+    @media (max-width: 768px) {
+        .dashboard-header {
+            padding: 5px; /* Adjust for smaller screens */
+        }
+
+        .col-md-2, .col-md-3, .col-md-7 {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+
+        .chart-container {
+            height: 200px;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+    }
+
+    @media (min-width: 768px) {
+        .chart-container {
+            height: 300px;
+        }
+    }
+
+    .chart-container {
+        position: relative;
+        width: 100%;
+    }
 </style>
 
 <div class="container mt-1">
     <div class="dashboard-header">
         <h1 class="text-center mb-4">Dashboard</h1>
-        <div class="moving-text">
-            <marquee direction="left" behavior="scroll" scrollamount="5">
-                স্মার্ট বাংলাদেশের প্রত্যয়, জ্বালানির সাশ্রয়...জ্বালানি নিরাপত্তা সর্বোচ্চ অগ্রাধিকার...প্রাকৃতিক গ্যাস সীমিত, এর দক্ষ ব্যবহার নিশ্চিত করুন...ভবিষ্যৎ প্রজন্মের জন্য গ্যাসের অপচয় রোধ করুন...প্রাকৃতিক গ্যাস মূল্যবান জাতীয় সম্পদ...
-            </marquee>
-        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -37,7 +61,7 @@
         </div>
         <div class="col-md-3">
             <h2 class="text-center">Award distribution</h2>
-            <div class="chart-container" style="position: relative; height:300px; width:100%">
+            <div class="chart-container">
                 <canvas id="awardDistributionChart"></canvas>
             </div>
             <div id="selectedEmployeeInfo" class="text-center mt-3"></div>
@@ -65,176 +89,213 @@
         </div>
         <div class="container">
             <h2 class="text-center mt-4">Employees with Most Awards</h2>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Rank</th>
-                <th>Employee Name</th>
-                <th>Enothi ID</th>
-                <th>Total Awards</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for employee in top_employees %}
-                <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td>{{ employee.employee_name }}</td>
-                    <td>{{ employee.employee_enothi_id }}</td>
-                    <td>{{ employee.total_awards }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-            
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Employee Name</th>
+                            <th>Enothi ID</th>
+                            <th>Total Awards</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for employee in top_employees %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ employee.employee_name }}</td>
+                                <td>{{ employee.employee_enothi_id }}</td>
+                                <td>{{ employee.total_awards }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
-        
     </div>
-   
 
+    <script>
+        let employeeChart;  // To keep track of the employee chart instance
+        let advisorChart;   // To keep track of the advisor chart instance
 
-<script>
-    let employeeChart;  // To keep track of the employee chart instance
-    let advisorChart;   // To keep track of the advisor chart instance
+        const statusMapping = {
+            "0": "PENDING",
+            "1": "REJECTED",
+            "2": "APPROVED"
+        };
 
-    const statusMapping = {
-        "0": "PENDING",
-        "1": "REJECTED",
-        "2": "APPROVED"
-    };
-
-    function searchEmployee() {
-        const query = document.getElementById('searchInput').value;
-        if (query.length < 3) {
-            document.getElementById('employeeList').innerHTML = '';
-            return;
+        function searchEmployee() {
+            const query = document.getElementById('searchInput').value;
+            if (query.length < 3) {
+                document.getElementById('employeeList').innerHTML = '';
+                return;
+            }
+            fetch(`api/search-employee/?q=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    const employeeList = document.getElementById('employeeList');
+                    employeeList.innerHTML = '';
+                    data.employees.forEach(emp => {
+                        const listItem = document.createElement('li');
+                        listItem.className = 'list-group-item';
+                        listItem.innerHTML = `${emp.name} (${emp.enothi_id})`;
+                        listItem.onclick = () => fetchEmployeeAwards(emp.enothi_id, emp.name);
+                        employeeList.appendChild(listItem);
+                    });
+                })
+                .catch(error => console.error('Error searching employee:', error));
         }
-        fetch(`api/search-employee/?q=${query}`)
-            .then(response => response.json())
-            .then(data => {
-                const employeeList = document.getElementById('employeeList');
-                employeeList.innerHTML = '';
-                data.employees.forEach(emp => {
-                    const listItem = document.createElement('li');
-                    listItem.className = 'list-group-item';
-                    listItem.innerHTML = `${emp.name} (${emp.enothi_id})`;
-                    listItem.onclick = () => fetchEmployeeAwards(emp.enothi_id, emp.name);
-                    employeeList.appendChild(listItem);
-                });
-            })
-            .catch(error => console.error('Error searching employee:', error));
-    }
 
-    function fetchEmployeeAwards(enothi_id, name) {
-        fetch(`api/award_pie/${enothi_id}/`)
-            .then(response => response.json())
-            .then(data => {
-                const ctx = document.getElementById('awardDistributionChart').getContext('2d');
-                
-                // Destroy the previous chart instance if it exists
-                if (employeeChart) {
-                    employeeChart.destroy();
-                }
+        function fetchEmployeeAwards(enothi_id, name) {
+            document.getElementById('searchInput').value = `[${enothi_id}] ${name}`;
+            
+            // Clear the employeeList when an employee is selected
+            document.getElementById('employeeList').innerHTML = '';
 
-                employeeChart = new Chart(ctx, {
-                    type: 'pie',
-                    data: {
-                        labels: ['Own Department', 'Other Department'],
-                        datasets: [{
-                            data: [data.own_department, data.other_department],
-                            backgroundColor: ['#007bff', '#17a2b8']
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    boxWidth: 20,
-                                    padding: 15
-                                }
-                            },
-                            datalabels: {
-                                formatter: (value, context) => {
-                                    const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                                    const percentage = (value / total * 100).toFixed(2) + '%';
-                                    return percentage;
+            fetch(`api/award_pie/${enothi_id}/`)
+                .then(response => response.json())
+                .then(data => {
+                    const ctx = document.getElementById('awardDistributionChart').getContext('2d');
+                    
+                    // Destroy the previous chart instance if it exists
+                    if (employeeChart) {
+                        employeeChart.destroy();
+                    }
+
+                    employeeChart = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: ['Own Department', 'Other Department'],
+                            datasets: [{
+                                data: [data.own_department, data.other_department],
+                                backgroundColor: ['#007bff', '#17a2b8']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        boxWidth: 20,
+                                        padding: 15
+                                    }
                                 },
-                                color: '#fff',
+                                datalabels: {
+                                    formatter: (value, context) => {
+                                        const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                        const percentage = (value / total * 100).toFixed(2) + '%';
+                                        return percentage;
+                                    },
+                                    color: '#fff',
+                                }
                             }
                         }
-                    }
-                });
+                    });
 
-                // Display selected employee information below the chart
-                const selectedEmployeeInfo = document.getElementById('selectedEmployeeInfo');
-                selectedEmployeeInfo.innerHTML = `<p>Selected Employee: ${name} (${enothi_id})</p>`;
+                    // Display selected employee information below the chart
+                    const selectedEmployeeInfo = document.getElementById('selectedEmployeeInfo');
+                    selectedEmployeeInfo.innerHTML = `<p>Selected Employee: ${name} (${enothi_id})</p>`;
 
-                // Fetch and display employee's awards in the table
-                fetchEmployeeAwardTable(enothi_id);
-            })
-            .catch(error => console.error('Error fetching employee awards distribution:', error));
-    }
-
-    function fetchEmployeeAwardTable(enothi_id) {
-        fetch(`api/employee-awards/${enothi_id}/`)
-            .then(response => response.json())
-            .then(data => {
-                const tableBody = document.getElementById('employeeAwardTableBody');
-                tableBody.innerHTML = '';  // Clear previous data
-                data.awards.forEach(award => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${award.advisorid}</td>
-                        <td>${award.award_evaluatorid}</td>
-                        <td>${award.award_evaluateeid}</td>
-                        <td>${award.purposeid}</td>
-                        <td>${award.description}</td>
-                        <td>${statusMapping[award.Status]}</td>
-                        <td>${award.remark}</td>
-                    `;
-                    tableBody.appendChild(row);
-                });
-            })
-            .catch(error => console.error('Error fetching employee award data:', error));
-    }
-
-    function searchAdvisor() {
-        const query = document.getElementById('advisorSearchInput').value;
-        if (query.length < 3) {
-            document.getElementById('advisorList').innerHTML = '';
-            return;
+                    // Fetch and display employee's awards in the table
+                    fetchEmployeeAwardTable(enothi_id);
+                })
+                .catch(error => console.error('Error fetching employee awards distribution:', error));
         }
-        fetch(`api/search-advisor/?q=${query}`)
+
+        function fetchEmployeeAwardTable(enothi_id) {
+            fetch(`api/employee-awards/${enothi_id}/`)
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.getElementById('employeeAwardTableBody');
+                    tableBody.innerHTML = '';  // Clear previous data
+                    data.awards.forEach(award => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${award.advisorid}</td>
+                            <td>${award.award_evaluatorid}</td>
+                            <td>${award.award_evaluateeid}</td>
+                            <td>${award.purposeid}</td>
+                            <td>${award.description}</td>
+                            <td>${statusMapping[award.Status]}</td>
+                            <td>${award.remark}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Error fetching employee award data:', error));
+        }
+
+        function searchAdvisor() {
+            const query = document.getElementById('advisorSearchInput').value;
+            if (query.length < 3) {
+                document.getElementById('advisorList').innerHTML = '';
+                return;
+            }
+            fetch(`api/search-advisor/?q=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    const advisorList = document.getElementById('advisorList');
+                    advisorList.innerHTML = '';
+                    data.advisors.forEach(advisor => {
+                        const listItem = document.createElement('li');
+                        listItem.className = 'list-group-item';
+                        listItem.innerHTML = `${advisor.name} (${advisor.enothi_id})`;
+                        listItem.onclick = () => fetchAdvisorAwardsStatus(advisor.enothi_id, advisor.name);
+                        advisorList.appendChild(listItem);
+                    });
+                })
+                .catch(error => console.error('Error searching advisor:', error));
+        }
+
+        function fetchAdvisorAwardsStatus(enothi_id, name) {
+            fetch(`api/advisor_awards_status/${enothi_id}/`)
+                .then(response => response.json())
+                .then(data => {
+                    const ctx = document.getElementById('advisorAwardStatusChart').getContext('2d');
+                    
+                    // Destroy the previous chart instance if it exists
+                    if (advisorChart) {
+                        advisorChart.destroy();
+                    }
+
+                    advisorChart = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: ['Pending', 'Approved', 'Rejected'],
+                            datasets: [{
+                                data: [data.pending, data.approved, data.rejected],
+                                backgroundColor: ['#ffc107', '#28a745', '#dc3545']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        boxWidth: 20,
+                                        padding: 15
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    // Display selected advisor information below the chart
+                    const selectedAdvisorInfo = document.getElementById('selectedAdvisorInfo');
+                    selectedAdvisorInfo.innerHTML = `<p>Selected Advisor: ${name} (${enothi_id})</p>`;
+                })
+                .catch(error => console.error('Error fetching advisor awards status:', error));
+        }
+
+        fetch(`api/advisor-status/`)
             .then(response => response.json())
             .then(data => {
-                const advisorList = document.getElementById('advisorList');
-                advisorList.innerHTML = '';
-                data.advisors.forEach(advisor => {
-                    const listItem = document.createElement('li');
-                    listItem.className = 'list-group-item';
-                    listItem.innerHTML = `${advisor.name} (${advisor.enothi_id})`;
-                    listItem.onclick = () => fetchAdvisorAwardsStatus(advisor.enothi_id, advisor.name);
-                    advisorList.appendChild(listItem);
-                });
-            })
-            .catch(error => console.error('Error searching advisor:', error));
-    }
-
-    function fetchAdvisorAwardsStatus(enothi_id, name) {
-        fetch(`api/advisor_awards_status/${enothi_id}/`)
-            .then(response => response.json())
-            .then(data => {
-                const ctx = document.getElementById('advisorAwardStatusChart').getContext('2d');
-                
-                // Destroy the previous chart instance if it exists
-                if (advisorChart) {
-                    advisorChart.destroy();
-                }
-
-                advisorChart = new Chart(ctx, {
+                const ctx = document.getElementById('advisorStatusChart').getContext('2d');
+                new Chart(ctx, {
                     type: 'pie',
                     data: {
                         labels: ['Pending', 'Approved', 'Rejected'],
@@ -257,43 +318,7 @@
                         }
                     }
                 });
-
-                // Display selected advisor information below the chart
-                const selectedAdvisorInfo = document.getElementById('selectedAdvisorInfo');
-                selectedAdvisorInfo.innerHTML = `<p>Selected Advisor: ${name} (${enothi_id})</p>`;
             })
-            .catch(error => console.error('Error fetching advisor awards status:', error));
-    }
-
-    fetch(`api/advisor-status/`)
-        .then(response => response.json())
-        .then(data => {
-            const ctx = document.getElementById('advisorStatusChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: ['Pending', 'Approved', 'Rejected'],
-                    datasets: [{
-                        data: [data.pending, data.approved, data.rejected],
-                        backgroundColor: ['#ffc107', '#28a745', '#dc3545']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                boxWidth: 20,
-                                padding: 15
-                            }
-                        }
-                    }
-                }
-            });
-        })
-        .catch(error => console.error('Error fetching advisor status:', error));
-</script>
-
+            .catch(error => console.error('Error fetching advisor status:', error));
+    </script>
 {% endblock %}

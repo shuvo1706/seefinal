@@ -529,6 +529,7 @@ def AwardSystem(request):
                     sender=current_user,  # Assuming current_user has a 'user' field
                     message=notification_message
                 )
+         
 
             # Provide feedback to the user
          messages.success(request, 'Award request has been sent for approval.')
