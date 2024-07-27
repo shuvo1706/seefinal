@@ -16,86 +16,124 @@
     
     <title>Evaluation</title>
    
-   	<style>
-		body,
-		html {
-			margin: 0;
-			padding: 0;
-			height: 100%;
-			background: #7abecc !important;
-		}
-		.user_card {
-			width: 550px;
-			margin-top: auto;
-			margin-bottom: 720px;
-			background: #74cfbf;
-			position: relative;
-			display: flex;
-			justify-content: center;
-			flex-direction: column;
-			padding: 10px;
-			box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-			-webkit-box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-			-moz-box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-			border-radius: 5px;
-
-		}
-
-		.form_container {
-			margin-top: 20px;
-		}
-
-		#form-title{
-			color: #fff;
-		}
-		.login_btn {
-			width: 40%;
-			background: #33ccff !important;
-			color: rgb(255, 255, 255) !important;
-            
-		}
-		.login_btn:focus {
-			box-shadow: none !important;
-			outline: 0px !important;
-		}
-		.login_container {
-			padding: 0 2rem;
-		}
-		.input-group-text {
-			background: #f7ba5b !important;
-			color: white !important;
-			border: 0 !important;
-			border-radius: 0.25rem 0 0 0.25rem !important;
-		}
-		.input_user,
-		.input_pass:focus {
-			box-shadow: none !important;
-			outline: 0px !important;
-		}
-
-	</style>
+	
+	<style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background: #7abecc;
+            color: #333; /* Text color */
+        }
+        .btn-red {
+            background-color: #7393B3 !important; /* !important ensures that the style is applied */
+        }
+        .user_card {
+            width: 550px;
+            margin: auto;
+            margin-top: 20px;
+            background: #f8f9fa; /* Light gray background */
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        #form-title {
+            background-color: #7393B3; /* Background color for title */
+            color: #fff; /* White text color */
+            padding: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .form-container {
+            margin-top: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .form-row label {
+            width: 180px;
+            text-align: right;
+            margin-right: 10px;
+            color: #000; /* Black label text color */
+        }
+        .form-row textarea,
+        .form-row input {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333; /* Text color for inputs */
+            background-color: #fff; /* White background for inputs */
+        }
+        .login-btn {
+            width: 40%;
+            background: #000; /* Black button */
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            margin-top: 10px;
+        }
+        .login-btn:focus {
+            box-shadow: none;
+            outline: none;
+        }
+        /* Custom styles for the "Remark" select */
+        #remark {
+            text-align: center; /* Center text */
+        }
+        /* Styles for the message */
+        .message {
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 10px;
+            color: red;
+            font-weight: bold;
+        }
+    </style>
     
    
    
 </head>
 <body>
-    <div class="container h-100">
-		<div class="d-flex justify-content-center h-100">
-			<div class="user_card">
-				<div class="d-flex justify-content-center">
+    <div class="container-fluid h-100">
+        <div class="row justify-content-center h-100">
+            <div class="col-lg-6">
+                <div class="user_card">
 					<h3 id="form-title">Evaluation</h3>
-				</div>
-				<div class="d-flex justify-content-center form_container">
-					<form action="" method="post" novalidate> {% csrf_token %}
-                    <select name="employee" id="employee" required>
-                        <option selected disabled="true"> Select Employee </option>
-                        {% for emp in employeeData %}
-                        <option>[{{emp.empid}}] - {{emp.ename}}</option><br>
-                        {% endfor %}
-                    </select>
+					<form action="" id="evaluateeform" method="post" class="form-container"> {% csrf_token %}
+					<div>
+					<b>Select Designation:</b> <br>
+					<input type="checkbox" id="gm" name="gm" value="General Manager" data-designation="1">
+					<label for="gm">General Manager</label><br>
+					<input type="checkbox" id="dgm" name="dgm" value="Deputy General Manager" data-designation="2">
+					<label for="dgm">Deputy General Manager</label><br>
+					<input type="checkbox" id="m" name="m" value="Manager" data-designation="3">
+					<label for="m">Manager</label><br>
+					<input type="checkbox" id="dm" name="dm" value="Deputy Manager" data-designation="4">
+					<label for="dm">Deputy Manager</label><br>
+					<input type="checkbox" id="=am" name="am" value="Assistant Manager" data-designation="5">
+					<label for="am">Assistant Manager</label><br><br>
+
+					</div>
+					
+					<b>Employee Name:</b> &nbsp;
+                    <select name="employee" id="employee" style="min-width: 100px;">
+						<option selected disabled>Select ..</option>
+						{% for emp in employeeData %}
+							<option value="{{ emp.empid }}">{{ emp.ename }}</option>
+						{% endfor %}
+					</select>
 					<br><br>
 					<div class="d-flex justify-content-center">
-						<input  class="login_btn" type="submit" name="profile" value="Proceed">
+						<input class="btn btn-dark login-btn btn-red" type="submit" name="profile" value="Proceed">
 					</div>
 					
 				</form>
@@ -115,21 +153,80 @@
 
     </script>
 
-    <script>
-        function myFunction() {
-        //alert(document.getElementById("employee").value);
-        //var employees = JSON.parse({{"employeeData | escapejs"}});
-        //var data = JSON.parse ("{{employeeData | escapejs}}");
-
-        //alert("{{employeeData}}"[0]);
-        //alert("{{employeeData}}");
-
-        //document.write(5 + 6);
-        alert(document.getElementById("employee").value);
-       
-        }
-    </script>
     
+<script>
+	
+
+ function updateEmployeeOptions() {
+	 var selectedDesignations = [];
+	 $('input[type=checkbox]:checked').each(function() {
+		 var designation = $(this).data('designation');
+		 selectedDesignations.push(designation);
+		 //console.log(selectedDesignations)
+	 });
+
+	 var csrftoken = getCookie('csrftoken');
+
+	 console.log(selectedDesignations)
+	 console.log("helloosdsds")
+	
+
+	 // AJAX call to fetch employees based on selectedDesignations
+	 $.ajax({
+		 // Replace with your endpoint to fetch employees
+		 url: "{% url 'select-evaluatee' %}",
+		 type: 'POST',
+		 headers: {
+		 'X-CSRFToken': csrftoken  // Include CSRF token in headers
+		 },
+		 data: {
+			 'designations': selectedDesignations,
+			 
+		 },
+		 traditional: true,
+		 success: function(data) {
+			 var options = '<option selected disabled>Select ..</option>';
+			 data.forEach(function(emp) {
+				 options += '<option value="' + emp.empid + '">' + '[' + emp.empid + '] - ' + emp.ename + '</option>';
+			 });
+			 $('#employee').html(options);
+		 },
+		 error: function(xhr, status, error) {
+			 console.error('Error fetching employees: ' + error);
+		 }
+	 });
+ }
+
+ function getCookie(name) {
+ var cookieValue = null;
+ if (document.cookie && document.cookie !== '') {
+	 var cookies = document.cookie.split(';');
+	 for (var i = 0; i < cookies.length; i++) {
+		 var cookie = cookies[i].trim();
+		 // Does this cookie string begin with the name we want?
+		 if (cookie.substring(0, name.length + 1) === (name + '=')) {
+			 cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+			 break;
+		 }
+	 }
+ }
+ return cookieValue;
+}
+$('input[type=checkbox]').change(function() {
+    updateEmployeeOptions();
+});
+
+
+$('#evaluateeform').submit(function(event) {
+            if ($('#employee').val() === '') {
+                event.preventDefault(); // Prevent form submission
+                alert('Please select an Employee.'); // Display an alert
+            }
+        });
+    
+	 
+ </script>
+
     
     
     

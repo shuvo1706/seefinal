@@ -92,8 +92,9 @@
           </a>  
 
           <span class="hello-msg"> Award Counter: {{ counter }}</span>
-            <span class="hello-msg"> Enothi ID: {{ request.user }}</span>
-            <span class="hello-msg"><a href="{% url 'logout' %}"> Logout </a></span>
+          <span class="hello-msg"> Enothi ID: {{ request.user }}</span>
+          <span class="hello-msg"><a href = "{% url 'change-password' %}"> Change Password </a></a></span>
+          <span class="hello-msg"><a href="{% url 'logout' %}"> Logout </a></span>
         </div>
     </div>
 </nav>
