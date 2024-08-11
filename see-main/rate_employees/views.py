@@ -14,6 +14,8 @@ from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Q, F
 from .serializers import AwardSerializer
+from django.contrib.auth.models import User
+
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
@@ -27,13 +29,20 @@ from . import petro
 
 @login_required(login_url='login')
 def home(request):
-     current_user=Employee.objects.get(enothi_id=request.user)
-     counter=current_user.counter
-     context={
-            'counter':counter
+    #current_user=Employee.objects.get(enothi_id=request.user.username)
+    #if not current_user:
+    if request.user.username == '0001' or request.user.username == '0002' or request.user.username == '0003' :
+        current_user = User.objects.get(username=request.user.username)
+        employee_name=current_user.first_name
+    else:
+        current_user=Employee.objects.get(enothi_id=request.user.username)
+        employee_name=current_user.ename
+        
+    context={
+            'employee_name':employee_name
         }
     
-     return render(request,'employees/homePage.html',context)
+    return render(request,'employees/homePage.html',context)
 
 @login_required(login_url='login')
 def employees_info(request):
@@ -84,6 +93,8 @@ def loginPage(request):
     #reza_update
     
 def change_password(request):
+    current_user=Employee.objects.get(enothi_id=request.user)
+    employee_name=current_user.ename  
     if request.method == 'POST':
         form = PasswordChangeForm(request.user, request.POST)
         if form.is_valid():
@@ -94,10 +105,12 @@ def change_password(request):
     else:
         print("executed!!")
         form = PasswordChangeForm(request.user)
-    
-    context = {
+        
+     
+        context = {
                
-                'form': form
+                'form': form,
+                'employee_name':employee_name
                
                 }
     return render (request,'employees/change_password.html',context)
@@ -110,129 +123,35 @@ def logoutUser(request):
 
 @login_required(login_url='login')
 def showProfileData(request):
-    #df = pd.read_excel("employees.xlsx")
-    #employees_data = df.to_dict(orient='records')
-    if request.method == 'POST':
-
-        return redirect('home') # no data will be saved!!!
-        print("request post")
+    # user_id = request.user.username
+    mydata = Employee.objects.filter(enothi_id=request.user).values()
+    evaluation_count = Evaluation.objects.filter(evaluatorid=mydata[0]['empid']).count()
+    employee_count = Employee.objects.values().count()
+    current_user=Employee.objects.get(enothi_id=request.user)
+    counter=current_user.counter
+    print("Evaluation count!!!")
+    print("employee id ", mydata[0]['empid'])
+    print(evaluation_count, " ", employee_count)
+    if mydata.exists():
+        print("mydata exists!!")
         print(request.POST)
-        fm = EmployeeRegistration(request.POST)
-
-        if fm.is_valid():
-            mydata = Employee.objects.filter(enothi_id = request.user)
-            if mydata.exists():
-                #update profile
-                myProfileData = Employee.objects.get(enothi_id = request.user)
-                #print(" My Objects ",myProfileData[0])
-                myProfileData.ename = request.POST['name']
-                myProfileData.eemail = request.POST['email']
-                myProfileData.empid = request.POST['empid']
-                myProfileData.edesignation = request.POST['designation']
-                myProfileData.esection = -1
-                myProfileData.edept = -1
-                myProfileData.edivision = request.POST['division']
-                myProfileData.edirectorate = -1
-                myProfileData.save()
-                return redirect('home')
-
-            #print(fm)
-            print("This is POST statement")
-            print(request.POST['name'])
-            name = request.POST['name']
-            email = request.POST['email']
-            enothi_id = request.user
-            empid = request.POST['empid']
-            designation = request.POST['designation']
-            section = -1
-            department = -1
-            division = request.POST['division']
-            directorate = -1
-
-            new_emp = Employee(empid = empid, enothi_id = enothi_id , ename = name, eemail = email, edesignation = designation, edept = department, esection = section, edivision = division, edirectorate = directorate)
-            #print(fm.cleaned_data)
-            new_emp.save()
-            return redirect('home')
-        #else if request.POST['enothi_id']:
-        else:
-            print("not valid enothi_id ",request.user)
-            print("enothi_id from post ",request.POST['enothi_id'])
-            #print(fm)
-
-    elif request.method == 'GET' and 'employee_name' in request.GET:
-        return redirect('home')
-        
-        employee_name = request.GET.get('employee_name')
-        
-        #print(employee_name)
-        for employee in employees_data:
-            idname = "["+str(employee['ID'])+"] - "+employee['Name']
+        context = {
+            'myProfileData': mydata[0],
+            'division_name': petro.divisions[int(mydata[0]['edivision'])-1][1],
+            'designation_name' : petro.designations[int(mydata[0]['edesignation'])][1],
+            'evaluation_count': evaluation_count,
+            'employee_count': employee_count,
+            'counter': counter,
+            'employee_name': current_user.ename
             
-            if idname == employee_name:
-                print("got in list")
-                print(idname)
-                data = {
-                    'name':employee['Name'],
-                    'designation': employee['Designation'],
-                    'division': employee['Department'],
-                    'empid' : employee['ID']
-                }
-    
-                return JsonResponse(data)
-    elif request.method == 'GET' and 'employee_id' in request.GET:
-        return redirect('home')
-        
-        employee_id = request.GET.get('employee_id')
-        
-        print("helloooooooooooo")
-        print(employee_id)
+        }
 
-        for employee in employees_data:
-            idname = "["+str(employee['ID'])+"] - "+employee['Name']
-            
-            if idname == employee_name:
-                print("got in list")
-                print(idname)
-                data = {
-                    'name':employee['Name'],
-                    'designation': employee['Designation'],
-                    'division': employee['Department'],
-                    'empid' : employee['ID']
-                }
-    
-                return JsonResponse(data)
-    else:
+        print("This is my data", mydata[0]['ename'])
 
-        fm = EmployeeRegistration()
-        fm.initial['section'] = -1
-        fm.initial['department'] = -1
-        fm.initial['directorate'] = -1
-        fm.initial['enothi_id'] = request.user
-        user_id = request.user
-        mydata = Employee.objects.filter(enothi_id=request.user).values()
-        if mydata.exists():
-            print("mydata exists!!")
-            print(request.POST)
-            fm.initial['name'] = mydata[0]['ename']
-            fm.initial['email'] = mydata[0]['eemail']
-            fm.initial['empid'] = mydata[0]['empid']
-            fm.initial['designation'] = mydata[0]['edesignation']
-            fm.initial['division'] = petro.divisions[int(mydata[0]['edivision'])-1][1]
-           
-            designations = Designation.objects.all()
-            
-            context = {
-                'myProfileData': mydata[0],
-                'division_name': petro.divisions[int(mydata[0]['edivision'])-1][1],
-                'designation_name' : petro.designations[int(mydata[0]['edesignation'])][1]
+        return render(request, 'employees/profile3.html', context)
 
-                }
-            #return HttpResponse(template.render(context, request))
-            print("This is my data",mydata[0]['ename'])
-            print("This is Employee Enothi ",fm['enothi_id'])
-            print("SecDept Eval : ",petro.divisions[int(mydata[0]['edivision'])-1][1])
-            return render(request,'employees/profile3.html',context)    
-    return render(request,'employees/profile.html')
+    print("No employee data!!!")
+    return redirect('home')
 
 
 #reza_update
@@ -241,6 +160,7 @@ def select_evaluatee(request):
     evaluator_empid = Employee.objects.filter(Q(enothi_id = request.user)).values('empid')[0]['empid']
     #preevaluatees = Evaluation.objects.filter(Q(evaluatorid = int(request.user.username))).values('evaluateeid')
     preevaluatees = Evaluation.objects.filter(Q(evaluatorid = evaluator_empid)).values('evaluateeid')
+    current_user=Employee.objects.get(enothi_id=request.user)
     #preevaluatee_ids = [item['evaluateeid'] for item in preevaluatees]
 
     if request.method == 'POST':
@@ -265,6 +185,7 @@ def select_evaluatee(request):
             evaluatee = Employee.objects.filter(empid = evaluatee_empid).values()
             context = {
                 'evaluateeData': evaluatee,
+                'employee_name': current_user.ename
                 }
             return redirect('evaluate',emp_id = evaluatee_empid)
         else: # without selecting designations
@@ -282,7 +203,8 @@ def select_evaluatee(request):
         employees = Employee.objects.filter(~Q(empid = evaluator_empid),  ~Q(empid__in=preevaluatees)).values('empid', 'ename','enothi_id')
         #employees = Employee.objects.all()
         context = {
-            'employeeData': employees
+            'employeeData': employees,
+            'employee_name': current_user.ename
         }
         return render(request, 'employees/select_evaluatee.html', context)
     
@@ -290,6 +212,7 @@ def select_evaluatee(request):
 
 @login_required(login_url='login')
 def evaluate(request, emp_id):
+    current_user=Employee.objects.get(enothi_id=request.user)
     if request.method == 'POST':
         print("Evaluate Post Method ",request.user)
         for key, value in request.POST.items():
@@ -330,7 +253,8 @@ def evaluate(request, emp_id):
                 'evaluateeData': evaluatee,
                 'division_name': petro.divisions[int(evaluatee['edivision'])-1][1],
                 'designation_name': petro.designations[int(evaluatee['edesignation'])][1],
-                'evaluateeDesignation' : evaluatee['edesignation']
+                'evaluateeDesignation' : evaluatee['edesignation'],
+                'employee_name': current_user.ename
                 }
     print("test ",context['evaluateeData']['ename'])
     return render(request,'employees/evaluate.html',context)
@@ -340,7 +264,8 @@ def evaluate(request, emp_id):
   #reza_update      
 @login_required(login_url='login')
 def showReport(request):
-
+    current_user = User.objects.get(username=request.user.username)
+    employeename=current_user.first_name
     if request.method == 'POST':
         print("Report Post method called")
         print(request.POST)
@@ -349,7 +274,8 @@ def showReport(request):
             employees = Employee.objects.all()
             context = {
                 'designationData': designations,
-                'employeeData': employees
+                'employeeData': employees,
+                'employee_name':employeename
             }
             return render(request,'employees/query.html',context)
         
@@ -363,11 +289,7 @@ def showReport(request):
             results = []
             evaluatee_name = Employee.objects.filter(empid = int(request.POST['employee'])).values()[0]['ename']
             evaluatee_designation = Employee.objects.filter(empid = int(request.POST['employee'])).values()[0]['edesignation']
-            print("URAAA")
-            print(petro.designations[int(evaluatee_designation)][1])
-            
             evaluatee_division = Employee.objects.filter(empid = int(request.POST['employee'])).values()[0]['edivision']
-            
             #print(evaluatee_info)
             #print(type(all_evals))
             #print("Evaluatee Section : ",evaluatee_section)
@@ -387,20 +309,20 @@ def showReport(request):
                 #print(Employee.objects.filter(empid = eval['evaluatorid']).values())
                 evaluator = Employee.objects.filter(empid = eval['evaluatorid']).values()[0]
                 print("Evaluator Info : ",evaluator['ename'])
-            
+                print("Section : ",petro.sections[int(evaluator['esection'])-1][1])
                 print("SecDept Eval : ",petro.remarks[int(eval['secDeptEv'])-1][1])
                 print("Committee Eval : ",petro.remarks[int(eval['commEv'])-1][1])
                 print("Behavior Eval : ",petro.remarks[int(eval['behavEv'])-1][1])
 
                 final_report.append({
-                                  'evaluatee': Employee.objects.filter(empid = eval['evaluateeid']).values()[0]['ename'],
-                                  'evaluator': evaluator['ename'], 
-                                  'division': petro.divisions[int(evaluator['edivision'])-1][1],
-                                  'secDeptEval' : petro.remarks[int(eval['secDeptEv'])-1][1],
-                                  'comEval' : petro.remarks[int(eval['commEv'])-1][1],
-                                  'behavEval': petro.remarks[int(eval['behavEv'])-1][1],
-                                    }
-                                  )
+                     'evaluatee': Employee.objects.filter(empid=eval['evaluateeid']).values()[0]['ename'],
+                     'evaluator': evaluator['ename'], 
+                     'division': petro.divisions[int(evaluator['edivision'])-1][1],  # Removed extra closing parenthesis
+                     'secDeptEval': petro.remarks[int(eval['secDeptEv'])-1][1],
+                     'comEval': petro.remarks[int(eval['commEv'])-1][1],
+                     'behavEval': petro.remarks[int(eval['behavEv'])-1][1],
+                     })
+
             print("final Report")
             print(final_report)
 
@@ -478,14 +400,53 @@ def showReport(request):
             labels_json4 = json.dumps(labels4)
             data_json4 = json.dumps(data4)
 
+
+            div_percent = []
+            div_percent.append(round(((divisional_work['Excellent']/ (divisional_work['Excellent'] + divisional_work['Very Good'] + divisional_work['Good'] + divisional_work['Average'] )) * 100),2))
+
+            div_percent.append(round(((divisional_work['Very Good']/ (divisional_work['Excellent'] + divisional_work['Very Good'] + divisional_work['Good'] + divisional_work['Average'] )) * 100),2))
+
+            div_percent.append(round(((divisional_work['Good']/ (divisional_work['Excellent'] + divisional_work['Very Good'] + divisional_work['Good'] + divisional_work['Average'] )) * 100), 2))
+
+            div_percent.append(round(((divisional_work['Average']/ (divisional_work['Excellent'] + divisional_work['Very Good'] + divisional_work['Good'] + divisional_work['Average'] ))*100),2))
+
+            print("Divisional Percentage")
+            print(div_percent)
+
+
+            com_percent = []
+            com_percent.append(round(((committee_work['Excellent']/ (committee_work['Excellent'] + committee_work['Very Good'] + committee_work['Good'] + committee_work['Average'] )) * 100),2))
+
+            com_percent.append(round(((committee_work['Very Good']/ (committee_work['Excellent'] + committee_work['Very Good'] + committee_work['Good'] + committee_work['Average'] )) * 100),2))
+
+            com_percent.append(round(((committee_work['Good']/ (committee_work['Excellent'] + committee_work['Very Good'] + committee_work['Good'] + committee_work['Average'] )) * 100),2))
+
+            com_percent.append(round(((committee_work['Average']/ (committee_work['Excellent'] + committee_work['Very Good'] + committee_work['Good'] + committee_work['Average'] )) * 100),2))
+
+
+            behave_percent = []
+            behave_percent.append(round(((behav_work['Excellent']/ (behav_work['Excellent'] + behav_work['Very Good'] + behav_work['Good'] + behav_work['Average'] )) * 100),2))
+
+            behave_percent.append(round(((behav_work['Very Good']/ (behav_work['Excellent'] + behav_work['Very Good'] + behav_work['Good'] + behav_work['Average'] )) * 100),2))
+
+            behave_percent.append(round(((behav_work['Good']/ (behav_work['Excellent'] + behav_work['Very Good'] + behav_work['Good'] + behav_work['Average'] )) * 100),2))
+
+            behave_percent.append(round(((behav_work['Average']/ (behav_work['Excellent'] + behav_work['Very Good'] + behav_work['Good'] + behav_work['Average'] )) * 100),2))
+
+            allcat_percent = []
+            allcat_percent.append(round(((all_cat['Excellent']/ (all_cat['Excellent'] + all_cat['Very Good'] + all_cat['Good'] + all_cat['Average'] )) * 100),2))
+
+            allcat_percent.append(round(((all_cat['Very Good']/ (all_cat['Excellent'] + all_cat['Very Good'] + all_cat['Good'] + all_cat['Average'] )) * 100),2))
+
+            allcat_percent.append(round(((all_cat['Good']/ (all_cat['Excellent'] + all_cat['Very Good'] + all_cat['Good'] + all_cat['Average'] )) * 100),2))
+
+            allcat_percent.append(round(((all_cat['Average']/ (all_cat['Excellent'] + all_cat['Very Good'] + all_cat['Good'] + all_cat['Average'] )) * 100),2))           
     
             context = {
                 'evaluatee_name' :  evaluatee_name,
-                #'division_name': petro.divisions[evaluatee_designation-1][1],
-                #'designation_name': petro.designations[evaluatee_division][1],
-                
                 'evaluatee_designation' : petro.designations[int(evaluatee_designation)][1],
                 'evaluatee_division' : petro.divisions[int(evaluatee_division)-1][1],
+                
                 'report_data': final_report,
                 'labels_json1': labels_json1,
                 'data_json1': data_json1,
@@ -495,6 +456,11 @@ def showReport(request):
                 'data_json3': data_json3,
                 'labels_json4': labels_json4,
                 'data_json4': data_json4,
+                'div_percent': div_percent,
+                'com_percent': com_percent,
+                'behave_percent': behave_percent,
+                'allcat_percent':allcat_percent,
+                'employee_name':employeename
                 }
             
 
@@ -536,14 +502,13 @@ def showReport(request):
                 print("Behavior Eval : ",petro.remarks[int(eval['behavEv'])-1][1])
 
                 final_report.append({
-                                  'evaluatee': Employee.objects.filter(empid = eval['evaluateeid']).values()[0]['ename'],
-                                  'evaluator': evaluator['ename'], 
-                                  'division': petro.divisions[int(evaluator['edivision'])-1][1],
-                                  'secDeptEval' : petro.remarks[int(eval['secDeptEv'])-1][1],
-                                  'comEval' : petro.remarks[int(eval['commEv'])-1][1],
-                                  'behavEval': petro.remarks[int(eval['behavEv'])-1][1],
-                                    }
-                                  )
+                     'evaluatee': Employee.objects.filter(empid=eval['evaluateeid']).values()[0]['ename'],
+                     'evaluator': evaluator['ename'], 
+                     'division': petro.divisions[int(evaluator['edivision'])-1][1],  # Removed extra closing parenthesis
+                     'secDeptEval': petro.remarks[int(eval['secDeptEv'])-1][1],
+                     'comEval': petro.remarks[int(eval['commEv'])-1][1],
+                     'behavEval': petro.remarks[int(eval['behavEv'])-1][1],
+                     })
             print("final Report")
             print(final_report)
 
@@ -620,13 +585,52 @@ def showReport(request):
             data_json4 = json.dumps(data4)
 
 
+            div_percent = []
+            div_percent.append(round(((divisional_work['Excellent']/ (divisional_work['Excellent'] + divisional_work['Very Good'] + divisional_work['Good'] + divisional_work['Average'] )) * 100),2))
 
+            div_percent.append(round(((divisional_work['Very Good']/ (divisional_work['Excellent'] + divisional_work['Very Good'] + divisional_work['Good'] + divisional_work['Average'] )) * 100),2))
+
+            div_percent.append(round(((divisional_work['Good']/ (divisional_work['Excellent'] + divisional_work['Very Good'] + divisional_work['Good'] + divisional_work['Average'] )) * 100), 2))
+
+            div_percent.append(round(((divisional_work['Average']/ (divisional_work['Excellent'] + divisional_work['Very Good'] + divisional_work['Good'] + divisional_work['Average'] ))*100),2))
+
+            print("Divisional Percentage")
+            print(div_percent)
+
+
+            com_percent = []
+            com_percent.append(round(((committee_work['Excellent']/ (committee_work['Excellent'] + committee_work['Very Good'] + committee_work['Good'] + committee_work['Average'] )) * 100),2))
+
+            com_percent.append(round(((committee_work['Very Good']/ (committee_work['Excellent'] + committee_work['Very Good'] + committee_work['Good'] + committee_work['Average'] )) * 100),2))
+
+            com_percent.append(round(((committee_work['Good']/ (committee_work['Excellent'] + committee_work['Very Good'] + committee_work['Good'] + committee_work['Average'] )) * 100),2))
+
+            com_percent.append(round(((committee_work['Average']/ (committee_work['Excellent'] + committee_work['Very Good'] + committee_work['Good'] + committee_work['Average'] )) * 100),2))
+
+
+            behave_percent = []
+            behave_percent.append(round(((behav_work['Excellent']/ (behav_work['Excellent'] + behav_work['Very Good'] + behav_work['Good'] + behav_work['Average'] )) * 100),2))
+
+            behave_percent.append(round(((behav_work['Very Good']/ (behav_work['Excellent'] + behav_work['Very Good'] + behav_work['Good'] + behav_work['Average'] )) * 100),2))
+
+            behave_percent.append(round(((behav_work['Good']/ (behav_work['Excellent'] + behav_work['Very Good'] + behav_work['Good'] + behav_work['Average'] )) * 100),2))
+
+            behave_percent.append(round(((behav_work['Average']/ (behav_work['Excellent'] + behav_work['Very Good'] + behav_work['Good'] + behav_work['Average'] )) * 100),2))
+
+            allcat_percent = []
+            allcat_percent.append(round(((all_cat['Excellent']/ (all_cat['Excellent'] + all_cat['Very Good'] + all_cat['Good'] + all_cat['Average'] )) * 100),2))
+
+            allcat_percent.append(round(((all_cat['Very Good']/ (all_cat['Excellent'] + all_cat['Very Good'] + all_cat['Good'] + all_cat['Average'] )) * 100),2))
+
+            allcat_percent.append(round(((all_cat['Good']/ (all_cat['Excellent'] + all_cat['Very Good'] + all_cat['Good'] + all_cat['Average'] )) * 100),2))
+
+            allcat_percent.append(round(((all_cat['Average']/ (all_cat['Excellent'] + all_cat['Very Good'] + all_cat['Good'] + all_cat['Average'] )) * 100),2))      
 
 
             context = {
                 'evaluatee_name' :  evaluatee_name,
-                'evaluatee_designation' : evaluatee_designation,
-                'evaluatee_division' : evaluatee_division,
+                'evaluatee_designation' : petro.designations[int(evaluatee_designation)][1],
+                'evaluatee_division' : petro.divisions[int(evaluatee_division)-1][1],
                 'report_data': final_report,
                 'labels_json1': labels_json1,
                 'data_json1': data_json1,
@@ -636,6 +640,11 @@ def showReport(request):
                 'data_json3': data_json3,
                 'labels_json4': labels_json4,
                 'data_json4': data_json4,
+                'div_percent': div_percent,
+                'com_percent': com_percent,
+                'behave_percent': behave_percent,
+                'allcat_percent':allcat_percent,
+                'employee_name':employeename
                 }
             
             return render(request,'employees/report.html',context)
@@ -674,14 +683,13 @@ def showReport(request):
                 print("Behavior Eval : ",petro.remarks[int(eval['behavEv'])-1][1])
 
                 final_report.append({
-                                  'evaluatee': Employee.objects.filter(empid = eval['evaluateeid']).values()[0]['ename'],
-                                  'evaluator': evaluator['ename'], 
-                                  'division': petro.divisions[int(evaluator['edivision'])-1][1],
-                                  'secDeptEval' : petro.remarks[int(eval['secDeptEv'])-1][1],
-                                  'comEval' : petro.remarks[int(eval['commEv'])-1][1],
-                                  'behavEval': petro.remarks[int(eval['behavEv'])-1][1],
-                                    }
-                                  )
+                     'evaluatee': Employee.objects.filter(empid=eval['evaluateeid']).values()[0]['ename'],
+                     'evaluator': evaluator['ename'], 
+                     'division': petro.divisions[int(evaluator['edivision'])-1][1],  # Removed extra closing parenthesis
+                     'secDeptEval': petro.remarks[int(eval['secDeptEv'])-1][1],
+                     'comEval': petro.remarks[int(eval['commEv'])-1][1],
+                     'behavEval': petro.remarks[int(eval['behavEv'])-1][1],
+                     })
             print("final Report")
             print(final_report)
 
@@ -759,12 +767,51 @@ def showReport(request):
 
 
 
+            div_percent = []
+            div_percent.append(round(((divisional_work['Excellent']/ (divisional_work['Excellent'] + divisional_work['Very Good'] + divisional_work['Good'] + divisional_work['Average'] )) * 100),2))
 
+            div_percent.append(round(((divisional_work['Very Good']/ (divisional_work['Excellent'] + divisional_work['Very Good'] + divisional_work['Good'] + divisional_work['Average'] )) * 100),2))
+
+            div_percent.append(round(((divisional_work['Good']/ (divisional_work['Excellent'] + divisional_work['Very Good'] + divisional_work['Good'] + divisional_work['Average'] )) * 100), 2))
+
+            div_percent.append(round(((divisional_work['Average']/ (divisional_work['Excellent'] + divisional_work['Very Good'] + divisional_work['Good'] + divisional_work['Average'] ))*100),2))
+
+            print("Divisional Percentage")
+            print(div_percent)
+
+
+            com_percent = []
+            com_percent.append(round(((committee_work['Excellent']/ (committee_work['Excellent'] + committee_work['Very Good'] + committee_work['Good'] + committee_work['Average'] )) * 100),2))
+
+            com_percent.append(round(((committee_work['Very Good']/ (committee_work['Excellent'] + committee_work['Very Good'] + committee_work['Good'] + committee_work['Average'] )) * 100),2))
+
+            com_percent.append(round(((committee_work['Good']/ (committee_work['Excellent'] + committee_work['Very Good'] + committee_work['Good'] + committee_work['Average'] )) * 100),2))
+
+            com_percent.append(round(((committee_work['Average']/ (committee_work['Excellent'] + committee_work['Very Good'] + committee_work['Good'] + committee_work['Average'] )) * 100),2))
+
+
+            behave_percent = []
+            behave_percent.append(round(((behav_work['Excellent']/ (behav_work['Excellent'] + behav_work['Very Good'] + behav_work['Good'] + behav_work['Average'] )) * 100),2))
+
+            behave_percent.append(round(((behav_work['Very Good']/ (behav_work['Excellent'] + behav_work['Very Good'] + behav_work['Good'] + behav_work['Average'] )) * 100),2))
+
+            behave_percent.append(round(((behav_work['Good']/ (behav_work['Excellent'] + behav_work['Very Good'] + behav_work['Good'] + behav_work['Average'] )) * 100),2))
+
+            behave_percent.append(round(((behav_work['Average']/ (behav_work['Excellent'] + behav_work['Very Good'] + behav_work['Good'] + behav_work['Average'] )) * 100),2))
+
+            allcat_percent = []
+            allcat_percent.append(round(((all_cat['Excellent']/ (all_cat['Excellent'] + all_cat['Very Good'] + all_cat['Good'] + all_cat['Average'] )) * 100),2))
+
+            allcat_percent.append(round(((all_cat['Very Good']/ (all_cat['Excellent'] + all_cat['Very Good'] + all_cat['Good'] + all_cat['Average'] )) * 100),2))
+
+            allcat_percent.append(round(((all_cat['Good']/ (all_cat['Excellent'] + all_cat['Very Good'] + all_cat['Good'] + all_cat['Average'] )) * 100),2))
+
+            allcat_percent.append(round(((all_cat['Average']/ (all_cat['Excellent'] + all_cat['Very Good'] + all_cat['Good'] + all_cat['Average'] )) * 100),2))      
 
             context = {
                 'evaluatee_name' :  evaluatee_name,
-                'evaluatee_designation' : evaluatee_designation,
-                'evaluatee_division' : evaluatee_division,
+                'evaluatee_designation' : petro.designations[int(evaluatee_designation)][1],
+                'evaluatee_division' : petro.divisions[int(evaluatee_division)-1][1],
                 'report_data': final_report,
                 'labels_json1': labels_json1,
                 'data_json1': data_json1,
@@ -774,7 +821,12 @@ def showReport(request):
                 'data_json3': data_json3,
                 'labels_json4': labels_json4,
                 'data_json4': data_json4,
-                }
+                'div_percent': div_percent,
+                'com_percent': com_percent,
+                'behave_percent': behave_percent,
+                'allcat_percent':allcat_percent,
+                'employee_name':employeename
+            }
             
             return render(request,'employees/report.html',context)
         
@@ -783,17 +835,20 @@ def showReport(request):
         
         context = {
                 'report_data': final_report,
+                'employee_name':employeename
                 }
         return render(request,'employees/report.html',context)
     
     designations = Designation.objects.all()
     employees = Employee.objects.all()
+    current_user = User.objects.get(username=request.user.username)
+    employeename=current_user.first_name
     context = {
                 'designationData': designations,
-                'employeeData': employees
+                'employeeData': employees,
+                'employee_name': employeename
             }
     return render(request,'employees/query.html',context)
-
 @login_required(login_url='login')
 def giveAward(request):
     if request.method == 'POST':
@@ -893,7 +948,8 @@ def AwardSystem(request):
         current_user= Employee.objects.get(enothi_id = request.user) 
         counter=current_user.counter
         context={
-            'counter':counter
+            'counter':counter,
+            'employee_name':current_user.ename
         }  
       
         #if fmis valied?
@@ -962,38 +1018,42 @@ def AwardSystem(request):
       ###############get###################
       
       else:
-          emp_id=request.user
-          current_user= Employee.objects.get(enothi_id = request.user)
-          if(current_user.counter==0):
-              messages.error(request, 'You have 0 award counter.')
+        emp_id=request.user
+        current_user= Employee.objects.get(enothi_id = request.user)
+        if(current_user.counter==0):
+            messages.error(request, 'You have 0 award counter.')
               
          # advisor=Employee.objects.get(edivision=request.user )
          # print(advisor.ename+ "===========advisor")
-          print(current_user.ename+ "===========ename")
+        print(current_user.ename+ "===========ename")
          # print(current_user.empid)
           #print(current_user.enothi_id)
-          current_division = current_user.edivision
+        current_division = current_user.edivision
+        advisor = Employee.objects.filter(edivision=current_division, edesignation=2).first()  
+        if not advisor:
+            advisor = Employee.objects.filter(edivision=current_division, edesignation=1).last()
+         
+
 
         # Filter employees who are in the same department and have the designation "General Manager"
-          advisor = Employee.objects.filter(edivision=current_division, edesignation=1).first()
-          print("cute!!!!")
-          print(advisor.edivision )
+        print("cute!!!!")
+        print(advisor.edivision )
 
-          supervisor=advisor.ename
-          print(supervisor+ "===========supervisor")
+        supervisor=advisor.ename
+        print(supervisor+ "===========supervisor")
 
 
-          division= petro.divisions[int(current_user.edivision)-1][1]
+        division= petro.divisions[int(current_user.edivision)-1][1]
          # print(division+ "===========edivision")
-          designations = Designation.objects.all()
-          employees = Employee.objects.all()
-          advisor_designations=petro.designations[int(advisor.edesignation)][1]
-          advisor_divisions=petro.divisions[int(advisor.edivision)-1][1]
-          counter=current_user.counter
-          print("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy")
-          print(advisor_divisions)
+        designations = Designation.objects.all()
+        employees = Employee.objects.all()
+        advisor_designations=petro.designations[int(advisor.edesignation)][1]
+        advisor_divisions=petro.divisions[int(advisor.edivision)-1][1]
+        counter=current_user.counter
+        print("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy")
+        print(advisor_divisions)
     
-          context={
+        context={
              'evaluator_division': division,
              'advisor':supervisor,
              'designationData': designations,
@@ -1001,11 +1061,12 @@ def AwardSystem(request):
              'advisor_object':advisor,
              'ade':advisor_designations,
              'adi':advisor_divisions,
-             'counter': counter
+             'counter': counter,
+             'employee_name':current_user.ename
 
          }
 
-          return render(request,'employees/award.html',context)   
+        return render(request,'employees/award.html',context)   
 
         # current_user.counter -= 1    
          #current_user.save()
@@ -1137,11 +1198,13 @@ def AwardReport(request):
                         'status': petro.status[eval.Status][1],
                         'Counter': evaluator_employee.counter,
                         'evaluator_id': evaluator_employee.enothi_id,
-                        'remark':eval.remark
+                        'remark':eval.remark,
+                        
                     })
                 
                 context = {
-                    'report_data': finalawardreport
+                    'report_data': finalawardreport,
+                    'employee_name':current_user.ename
                 }
                 
                 return render(request, 'employees/awardreport.html', context)
@@ -1188,7 +1251,8 @@ def Advisor_approval(request):
                     })
                 
                 context = {
-                    'report_data': finalawardreport
+                    'report_data': finalawardreport,
+                    'employee_name':current_user.ename
                 }
                 
                 return render(request, 'employees/notifications.html', context)
@@ -1353,10 +1417,45 @@ def award_pie(request,enothi_id):
     
     
 def get_employee_awards(request, enothi_id):
-    print("INDIA")
-    awards= Award.objects.filter(award_evaluateeid=enothi_id)
-    serializer = AwardSerializer(awards, many=True)
-    return JsonResponse({'awards': serializer.data})
+    awards = Award.objects.filter(award_evaluateeid=enothi_id)
+    award_data = []
+
+    for award in awards:
+        try:
+            advisor = Employee.objects.get(enothi_id=award.advisorid)
+            evaluator = Employee.objects.get(enothi_id=award.award_evaluatorid)
+            evaluatee = Employee.objects.get(enothi_id=award.award_evaluateeid)
+            
+            award_data.append({
+                'award_id': award.awardid,
+                'advisor_name': advisor.ename,
+                'advisor_id': advisor.enothi_id,
+                'evaluator_name': evaluator.ename,
+                'evaluator_id': evaluator.enothi_id,
+                'evaluatee_name': evaluatee.ename,
+                'evaluatee_id': evaluatee.enothi_id,
+                'purposeid': award.purposeid,
+                'description': award.description,
+                'remark': award.remark,
+                'status': award.Status,
+            })
+        except Employee.DoesNotExist:
+            award_data.append({
+                'award_id': award.awardid,
+                'advisor_name': "Unknown Advisor",
+                'advisor_id': award.advisorid,
+                'evaluator_name': "Unknown Evaluator",
+                'evaluator_id': award.award_evaluatorid,
+                'evaluatee_name': "Unknown Evaluatee",
+                'evaluatee_id': award.award_evaluateeid,
+                'purposeid': award.purposeid,
+                'description': award.description,
+                'remark': award.remark,
+                'status': award.status,
+            })
+
+    return JsonResponse({'awards': award_data})
+
 
 
 
@@ -1374,23 +1473,26 @@ def is_superuser(user):
     return user.is_superuser
 
 # Apply the user_passes_test decorator to your view
-@user_passes_test(is_superuser)
+@login_required(login_url='login')
 def dashboard(request):
     top_employees = Award.objects.filter(Status=2).values('award_evaluateeid').annotate(total_awards=Count('award_evaluateeid')).order_by('-total_awards')[:5]
 
     # Assuming you have an Employee model to fetch employee details
+    current_user = User.objects.get(username=request.user.username)
+    employeename=current_user.first_name
     top_employees_details = []
     for emp in top_employees:
         employee = Employee.objects.get(enothi_id=emp['award_evaluateeid'])
         top_employees_details.append({
             'employee_name': employee.ename,
-            'employee_enothi_id': employee.enothi_id,
+            'employee_empid': employee.empid,
             'total_awards': emp['total_awards']
         })
         
 
     context = {
-        'top_employees': top_employees_details
+        'top_employees': top_employees_details,
+        'employee_name':  employeename
     }
     for employee in top_employees_details:
        

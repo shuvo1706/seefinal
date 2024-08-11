@@ -24,8 +24,9 @@ divisions = (
     ("2", "Finance"), 
     ("3", "Audit"), 
     ("4", "Strategic Planning & Resources Mobilisation"), 
-    ("5", "Financial Management"), 
+    ("5", "F M Division"), 
     ("6", "Service"), 
+    ("7", "IT DEPT"),
 )
 
 departments = (

@@ -7,7 +7,7 @@ class Employee(models.Model):
     empid = models.IntegerField()
     enothi_id = models.CharField(max_length=40)
     ename = models.CharField(max_length=40)
-    eemail = models.EmailField(max_length=30)
+    eemail = models.EmailField(max_length=40)
     edesignation = models.CharField(max_length=40)
     edept = models.CharField(max_length=40)
     esection = models.CharField(max_length=40)

@@ -21,23 +21,32 @@
             margin: 0;
             padding: 0;
             height: 100%;
-            background: #7abecc;
+            background: #e3f2fd;
             color: #333; /* Text color */
         }
         .btn-red {
-            background-color: #7393B3 !important; /* !important ensures that the style is applied */
+            background-color: #0044ff; /* Blue background color */
+            color: #ffffff; /* White text color */
+            border: none; /* Remove default border */
+            padding: 10px 15px; /* Add some padding */
+            border-radius: 5px; /* Round corners */
+            width: 40%; /* Maintain button size */
+            transition: none; /* Disable transition effects */
+        }
+        .btn-red:hover {
+            background-color: #1565c0 !important; /* Darker blue on hover */
         }
         .user_card {
             width: 550px;
             margin: auto;
-            margin-top:0 px;
+            margin-top: 0 px;
             background: #f8f9fa; /* Light gray background */
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         #form-title {
-            background-color: #7393B3; /* Black background for title */
+            background-color: #0044ff; /* Blue background for title */
             color: #fff; /* White text color */
             padding: 10px;
             text-align: center;
@@ -71,18 +80,6 @@
             font-size: 14px;
             color: #333; /* Text color for inputs */
             background-color: #fff; /* White background for inputs */
-        }
-        .login-btn {
-            width: 40%;
-            background: #000; /* Black button */
-            color: #fff;
-            border: none;
-            padding: 10px 15px;
-            margin-top: 10px;
-        }
-        .login-btn:focus {
-            box-shadow: none;
-            outline: none;
         }
         /* Custom styles for the "Seek Permission from" textarea */
         #seek {
@@ -123,6 +120,7 @@
         }
         .list-group-item:hover {
             background-color: #e9ecef;
+            color:  #0044ff;
         }
     </style>
 </head>
@@ -136,17 +134,17 @@
                         {% csrf_token %}
                         <div class="form-group">
                             <label for="Name">Select Employee:</label>
-                            <input type="text" id="searchInput" class="form-control" placeholder="enothi or name" onkeyup="searchEmployee()">
-                            <input type="hidden" id="employeeIdInput" name="employee">
+                            <input type="text" id="searchInput" class="form-control" placeholder="enothi or name" onkeyup="searchEmployee()" required>
+                            <input type="hidden" id="employeeIdInput" name="employee" required>
                             <ul id="employeeList" class="list-group mt-2"></ul>
                         </div>
                         <div class="form-group">
                             <label for="purpose">Purpose:</label>
-                            <input type="text" id="purpose" name="purpose" class="form-control" size="30">
+                            <input type="text" id="purpose" name="purpose" class="form-control" size="30" required>
                         </div>
                         <div class="form-group">
                             <label for="description">Description:</label>
-                            <textarea id="description" name="description" class="form-control" rows="4" cols="50"></textarea>
+                            <textarea id="description" name="description" class="form-control" rows="4" cols="50" required></textarea>
                         </div>
                         <div class="form-group">
                             <label for="seek">Seek Permission from:</label>
@@ -156,7 +154,7 @@
                             <textarea id="seek" name="seek" style="display: none;">{{ advisor_object.enothi_id }}</textarea>
                         </div>
                         <div class="form-group">
-                            <input type="submit" class="btn btn-dark login-btn btn-red" value="Submit">
+                            <input type="submit" class="btn btn-red" value="Submit">
                             {% if messages %}
                             <div class="message">
                                 {% for message in messages %}
